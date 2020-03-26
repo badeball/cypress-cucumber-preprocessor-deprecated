@@ -8,5 +8,14 @@
   },
   "rules": {
     "prettier/prettier": "error"
-  }
+  },
+  "overrides": [
+    {
+      "files": "features/**",
+      "rules": {
+        "no-restricted-syntax": 0,
+        "import/no-extraneous-dependencies": 0
+      }
+    }
+  ]
 }

@@ -71,7 +71,9 @@
     "jest": "^24.9.0",
     "lint-staged": "^7.3.0",
     "prettier": "^1.13.5",
-    "semantic-release": "^15.12.3"
+    "semantic-release": "^15.12.3",
+    "stream-buffers": "^3.0.2",
+    "strip-indent": "^3.0.0"
   },
   "jest": {
     "setupFilesAfterEnv": [
