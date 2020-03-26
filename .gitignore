@@ -69,3 +69,6 @@ target
 
 cypress-cucumber-example/
 cypress-cucumber-webpack-typescript-example/
+
+# Temporary directory for test execution
+tmp/
