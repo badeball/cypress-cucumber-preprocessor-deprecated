@@ -48,7 +48,6 @@
     "chokidar": "^2.0.4",
     "cosmiconfig": "^4.0.0",
     "cucumber": "^4.2.1",
-    "cucumber-expressions": "^6.0.1",
     "cucumber-tag-expressions": "^1.1.1",
     "debug": "^3.0.1",
     "gherkin": "^5.1.0",
