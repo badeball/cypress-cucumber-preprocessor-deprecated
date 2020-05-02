@@ -5,7 +5,9 @@ const glob = require("glob");
 const fs = require("fs");
 const { execFileSync } = require("child_process");
 
-const { shouldProceedCurrentStep } = require("./lib/tagsHelper");
+const {
+  shouldProceedCurrentStep
+} = require("./lib/browser-runtime/tagsHelper");
 
 const debug = (message, ...rest) =>
   process.env.DEBUG

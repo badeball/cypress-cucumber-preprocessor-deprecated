@@ -1,31 +1,26 @@
-// We know this is a duplicate of ./resolveStepDefinition.
-// We will remove that one soon and leave only this one in a future version.
+const methods = [
+  "given",
+  "when",
+  "then",
+  "and",
+  "but",
+  "Given",
+  "When",
+  "Then",
+  "And",
+  "But",
+  "Before",
+  "After",
+  "defineParameterType",
+  "defineStep"
+];
 
-const {
-  given,
-  when,
-  then,
-  and,
-  but,
-  Before,
-  After,
-  defineParameterType,
-  defineStep
-} = require("./lib/resolveStepDefinition");
-
-module.exports = {
-  given,
-  when,
-  then,
-  and,
-  but,
-  Given: given,
-  When: when,
-  Then: then,
-  And: and,
-  But: but,
-  Before,
-  After,
-  defineParameterType,
-  defineStep
-};
+module.exports = methods.reduce(
+  (acum, method) => ({
+    ...acum,
+    [method](...args) {
+      return window[method](...args);
+    }
+  }),
+  {}
+);
