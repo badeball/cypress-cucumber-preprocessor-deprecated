@@ -4,6 +4,7 @@
   "description": "Run gherkin-syntaxed specs with cypress.io",
   "main": "lib/index.js",
   "scripts": {
+    "build-cucumber-js": "cd vendor/cucumber-js && yarn",
     "build-browser-runtime": "rollup --config rollup.config.js",
     "test": "eslint . && jest && npm run test:all",
     "test:all": "cypress run --spec \"**/*.features\"",

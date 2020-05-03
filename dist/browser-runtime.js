@@ -47,7 +47,7 @@ if (typeof __g == 'number') __g = global; // eslint-disable-line no-undef
 });
 
 var _core = createCommonjsModule(function (module) {
-var core = module.exports = { version: '2.5.7' };
+var core = module.exports = { version: '2.5.1' };
 if (typeof __e == 'number') __e = core; // eslint-disable-line no-undef
 });
 var _core_1 = _core.version;
@@ -158,11 +158,6 @@ var _hide = _descriptors ? function (object, key, value) {
   return object;
 };
 
-var hasOwnProperty = {}.hasOwnProperty;
-var _has = function (it, key) {
-  return hasOwnProperty.call(it, key);
-};
-
 var PROTOTYPE = 'prototype';
 
 var $export = function (type, name, source) {
@@ -180,7 +175,7 @@ var $export = function (type, name, source) {
   for (key in source) {
     // contains in native
     own = !IS_FORCED && target && target[key] !== undefined;
-    if (own && _has(exports, key)) continue;
+    if (own && key in exports) continue;
     // export native or passed
     out = own ? target[key] : source[key];
     // prevent global pollution for namespaces
@@ -273,7 +268,7 @@ var lodash = createCommonjsModule(function (module, exports) {
   var undefined$1;
 
   /** Used as the semantic version number. */
-  var VERSION = '4.17.15';
+  var VERSION = '4.17.4';
 
   /** Used as the size to enable large array optimizations. */
   var LARGE_ARRAY_SIZE = 200;
@@ -404,6 +399,7 @@ var lodash = createCommonjsModule(function (module, exports) {
   /** Used to match property names within property paths. */
   var reIsDeepProp = /\.|\[(?:[^[\]]*|(["'])(?:(?!\1)[^\\]|\\.)*?\1)\]/,
       reIsPlainProp = /^\w*$/,
+      reLeadingDot = /^\./,
       rePropName = /[^.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\\]|\\.)*?)\2)\]|(?=(?:\.|\[\])(?:\.|\[\]|$))/g;
 
   /**
@@ -503,8 +499,8 @@ var lodash = createCommonjsModule(function (module, exports) {
       reOptMod = rsModifier + '?',
       rsOptVar = '[' + rsVarRange + ']?',
       rsOptJoin = '(?:' + rsZWJ + '(?:' + [rsNonAstral, rsRegional, rsSurrPair].join('|') + ')' + rsOptVar + reOptMod + ')*',
-      rsOrdLower = '\\d*(?:1st|2nd|3rd|(?![123])\\dth)(?=\\b|[A-Z_])',
-      rsOrdUpper = '\\d*(?:1ST|2ND|3RD|(?![123])\\dTH)(?=\\b|[a-z_])',
+      rsOrdLower = '\\d*(?:(?:1st|2nd|3rd|(?![123])\\dth)\\b)',
+      rsOrdUpper = '\\d*(?:(?:1ST|2ND|3RD|(?![123])\\dTH)\\b)',
       rsSeq = rsOptVar + reOptMod + rsOptJoin,
       rsEmoji = '(?:' + [rsDingbat, rsRegional, rsSurrPair].join('|') + ')' + rsSeq,
       rsSymbol = '(?:' + [rsNonAstral + rsCombo + '?', rsCombo, rsRegional, rsSurrPair, rsAstral].join('|') + ')';
@@ -537,7 +533,7 @@ var lodash = createCommonjsModule(function (module, exports) {
   var reHasUnicode = RegExp('[' + rsZWJ + rsAstralRange  + rsComboRange + rsVarRange + ']');
 
   /** Used to detect strings that need a more robust regexp to match words. */
-  var reHasUnicodeWord = /[a-z][A-Z]|[A-Z]{2}[a-z]|[0-9][a-zA-Z]|[a-zA-Z][0-9]|[^a-zA-Z0-9 ]/;
+  var reHasUnicodeWord = /[a-z][A-Z]|[A-Z]{2,}[a-z]|[0-9][a-zA-Z]|[a-zA-Z][0-9]|[^a-zA-Z0-9 ]/;
 
   /** Used to assign default `context` object properties. */
   var contextProps = [
@@ -697,14 +693,6 @@ var lodash = createCommonjsModule(function (module, exports) {
   /** Used to access faster Node.js helpers. */
   var nodeUtil = (function() {
     try {
-      // Use `util.types` for Node.js 10+.
-      var types = freeModule && freeModule.require && freeModule.require('util').types;
-
-      if (types) {
-        return types;
-      }
-
-      // Legacy `process.binding('util')` for Node.js < 10.
       return freeProcess && freeProcess.binding && freeProcess.binding('util');
     } catch (e) {}
   }());
@@ -718,6 +706,34 @@ var lodash = createCommonjsModule(function (module, exports) {
       nodeIsTypedArray = nodeUtil && nodeUtil.isTypedArray;
 
   /*--------------------------------------------------------------------------*/
+
+  /**
+   * Adds the key-value `pair` to `map`.
+   *
+   * @private
+   * @param {Object} map The map to modify.
+   * @param {Array} pair The key-value pair to add.
+   * @returns {Object} Returns `map`.
+   */
+  function addMapEntry(map, pair) {
+    // Don't return `map.set` because it's not chainable in IE 11.
+    map.set(pair[0], pair[1]);
+    return map;
+  }
+
+  /**
+   * Adds `value` to `set`.
+   *
+   * @private
+   * @param {Object} set The set to modify.
+   * @param {*} value The value to add.
+   * @returns {Object} Returns `set`.
+   */
+  function addSetEntry(set, value) {
+    // Don't return `set.add` because it's not chainable in IE 11.
+    set.add(value);
+    return set;
+  }
 
   /**
    * A faster alternative to `Function#apply`, this function invokes `func`
@@ -2917,7 +2933,7 @@ var lodash = createCommonjsModule(function (module, exports) {
           if (!cloneableTags[tag]) {
             return object ? value : {};
           }
-          result = initCloneByTag(value, tag, isDeep);
+          result = initCloneByTag(value, tag, baseClone, isDeep);
         }
       }
       // Check for circular references and return its corresponding clone.
@@ -2927,16 +2943,6 @@ var lodash = createCommonjsModule(function (module, exports) {
         return stacked;
       }
       stack.set(value, result);
-
-      if (isSet(value)) {
-        value.forEach(function(subValue) {
-          result.add(baseClone(subValue, bitmask, customizer, subValue, value, stack));
-        });
-      } else if (isMap(value)) {
-        value.forEach(function(subValue, key) {
-          result.set(key, baseClone(subValue, bitmask, customizer, key, value, stack));
-        });
-      }
 
       var keysFunc = isFull
         ? (isFlat ? getAllKeysIn : getAllKeys)
@@ -3859,13 +3865,13 @@ var lodash = createCommonjsModule(function (module, exports) {
         return;
       }
       baseFor(source, function(srcValue, key) {
-        stack || (stack = new Stack);
         if (isObject(srcValue)) {
+          stack || (stack = new Stack);
           baseMergeDeep(object, source, key, srcIndex, baseMerge, customizer, stack);
         }
         else {
           var newValue = customizer
-            ? customizer(safeGet(object, key), srcValue, (key + ''), object, source, stack)
+            ? customizer(object[key], srcValue, (key + ''), object, source, stack)
             : undefined$1;
 
           if (newValue === undefined$1) {
@@ -3892,8 +3898,8 @@ var lodash = createCommonjsModule(function (module, exports) {
      *  counterparts.
      */
     function baseMergeDeep(object, source, key, srcIndex, mergeFunc, customizer, stack) {
-      var objValue = safeGet(object, key),
-          srcValue = safeGet(source, key),
+      var objValue = object[key],
+          srcValue = source[key],
           stacked = stack.get(srcValue);
 
       if (stacked) {
@@ -3936,7 +3942,7 @@ var lodash = createCommonjsModule(function (module, exports) {
           if (isArguments(objValue)) {
             newValue = toPlainObject(objValue);
           }
-          else if (!isObject(objValue) || isFunction(objValue)) {
+          else if (!isObject(objValue) || (srcIndex && isFunction(objValue))) {
             newValue = initCloneObject(srcValue);
           }
         }
@@ -4802,6 +4808,20 @@ var lodash = createCommonjsModule(function (module, exports) {
     }
 
     /**
+     * Creates a clone of `map`.
+     *
+     * @private
+     * @param {Object} map The map to clone.
+     * @param {Function} cloneFunc The function to clone values.
+     * @param {boolean} [isDeep] Specify a deep clone.
+     * @returns {Object} Returns the cloned map.
+     */
+    function cloneMap(map, isDeep, cloneFunc) {
+      var array = isDeep ? cloneFunc(mapToArray(map), CLONE_DEEP_FLAG) : mapToArray(map);
+      return arrayReduce(array, addMapEntry, new map.constructor);
+    }
+
+    /**
      * Creates a clone of `regexp`.
      *
      * @private
@@ -4812,6 +4832,20 @@ var lodash = createCommonjsModule(function (module, exports) {
       var result = new regexp.constructor(regexp.source, reFlags.exec(regexp));
       result.lastIndex = regexp.lastIndex;
       return result;
+    }
+
+    /**
+     * Creates a clone of `set`.
+     *
+     * @private
+     * @param {Object} set The set to clone.
+     * @param {Function} cloneFunc The function to clone values.
+     * @param {boolean} [isDeep] Specify a deep clone.
+     * @returns {Object} Returns the cloned set.
+     */
+    function cloneSet(set, isDeep, cloneFunc) {
+      var array = isDeep ? cloneFunc(setToArray(set), CLONE_DEEP_FLAG) : setToArray(set);
+      return arrayReduce(array, addSetEntry, new set.constructor);
     }
 
     /**
@@ -5677,7 +5711,7 @@ var lodash = createCommonjsModule(function (module, exports) {
       return function(number, precision) {
         number = toNumber(number);
         precision = precision == null ? 0 : nativeMin(toInteger(precision), 292);
-        if (precision && nativeIsFinite(number)) {
+        if (precision) {
           // Shift with exponential notation to avoid floating-point issues.
           // See [MDN](https://mdn.io/round#Examples) for more details.
           var pair = (toString(number) + 'e').split('e'),
@@ -6408,7 +6442,7 @@ var lodash = createCommonjsModule(function (module, exports) {
      */
     function initCloneArray(array) {
       var length = array.length,
-          result = new array.constructor(length);
+          result = array.constructor(length);
 
       // Add properties assigned by `RegExp#exec`.
       if (length && typeof array[0] == 'string' && hasOwnProperty.call(array, 'index')) {
@@ -6435,15 +6469,16 @@ var lodash = createCommonjsModule(function (module, exports) {
      * Initializes an object clone based on its `toStringTag`.
      *
      * **Note:** This function only supports cloning values with tags of
-     * `Boolean`, `Date`, `Error`, `Map`, `Number`, `RegExp`, `Set`, or `String`.
+     * `Boolean`, `Date`, `Error`, `Number`, `RegExp`, or `String`.
      *
      * @private
      * @param {Object} object The object to clone.
      * @param {string} tag The `toStringTag` of the object to clone.
+     * @param {Function} cloneFunc The function to clone values.
      * @param {boolean} [isDeep] Specify a deep clone.
      * @returns {Object} Returns the initialized clone.
      */
-    function initCloneByTag(object, tag, isDeep) {
+    function initCloneByTag(object, tag, cloneFunc, isDeep) {
       var Ctor = object.constructor;
       switch (tag) {
         case arrayBufferTag:
@@ -6462,7 +6497,7 @@ var lodash = createCommonjsModule(function (module, exports) {
           return cloneTypedArray(object, isDeep);
 
         case mapTag:
-          return new Ctor;
+          return cloneMap(object, isDeep, cloneFunc);
 
         case numberTag:
         case stringTag:
@@ -6472,7 +6507,7 @@ var lodash = createCommonjsModule(function (module, exports) {
           return cloneRegExp(object);
 
         case setTag:
-          return new Ctor;
+          return cloneSet(object, isDeep, cloneFunc);
 
         case symbolTag:
           return cloneSymbol(object);
@@ -6519,13 +6554,10 @@ var lodash = createCommonjsModule(function (module, exports) {
      * @returns {boolean} Returns `true` if `value` is a valid index, else `false`.
      */
     function isIndex(value, length) {
-      var type = typeof value;
       length = length == null ? MAX_SAFE_INTEGER : length;
-
       return !!length &&
-        (type == 'number' ||
-          (type != 'symbol' && reIsUint.test(value))) &&
-            (value > -1 && value % 1 == 0 && value < length);
+        (typeof value == 'number' || reIsUint.test(value)) &&
+        (value > -1 && value % 1 == 0 && value < length);
     }
 
     /**
@@ -6860,26 +6892,6 @@ var lodash = createCommonjsModule(function (module, exports) {
     }
 
     /**
-     * Gets the value at `key`, unless `key` is "__proto__" or "constructor".
-     *
-     * @private
-     * @param {Object} object The object to query.
-     * @param {string} key The key of the property to get.
-     * @returns {*} Returns the property value.
-     */
-    function safeGet(object, key) {
-      if (key === 'constructor' && typeof object[key] === 'function') {
-        return;
-      }
-
-      if (key == '__proto__') {
-        return;
-      }
-
-      return object[key];
-    }
-
-    /**
      * Sets metadata for `func`.
      *
      * **Note:** If this function becomes hot, i.e. is invoked a lot in a short
@@ -6995,11 +7007,11 @@ var lodash = createCommonjsModule(function (module, exports) {
      */
     var stringToPath = memoizeCapped(function(string) {
       var result = [];
-      if (string.charCodeAt(0) === 46 /* . */) {
+      if (reLeadingDot.test(string)) {
         result.push('');
       }
-      string.replace(rePropName, function(match, number, quote, subString) {
-        result.push(quote ? subString.replace(reEscapeChar, '$1') : (number || match));
+      string.replace(rePropName, function(match, number, quote, string) {
+        result.push(quote ? string.replace(reEscapeChar, '$1') : (number || match));
       });
       return result;
     });
@@ -10607,11 +10619,9 @@ var lodash = createCommonjsModule(function (module, exports) {
       function remainingWait(time) {
         var timeSinceLastCall = time - lastCallTime,
             timeSinceLastInvoke = time - lastInvokeTime,
-            timeWaiting = wait - timeSinceLastCall;
+            result = wait - timeSinceLastCall;
 
-        return maxing
-          ? nativeMin(timeWaiting, maxWait - timeSinceLastInvoke)
-          : timeWaiting;
+        return maxing ? nativeMin(result, maxWait - timeSinceLastInvoke) : result;
       }
 
       function shouldInvoke(time) {
@@ -10672,7 +10682,6 @@ var lodash = createCommonjsModule(function (module, exports) {
           }
           if (maxing) {
             // Handle invocations in a tight loop.
-            clearTimeout(timerId);
             timerId = setTimeout(timerExpired, wait);
             return invokeFunc(lastCallTime);
           }
@@ -13044,35 +13053,9 @@ var lodash = createCommonjsModule(function (module, exports) {
      * _.defaults({ 'a': 1 }, { 'b': 2 }, { 'a': 3 });
      * // => { 'a': 1, 'b': 2 }
      */
-    var defaults = baseRest(function(object, sources) {
-      object = Object(object);
-
-      var index = -1;
-      var length = sources.length;
-      var guard = length > 2 ? sources[2] : undefined$1;
-
-      if (guard && isIterateeCall(sources[0], sources[1], guard)) {
-        length = 1;
-      }
-
-      while (++index < length) {
-        var source = sources[index];
-        var props = keysIn(source);
-        var propsIndex = -1;
-        var propsLength = props.length;
-
-        while (++propsIndex < propsLength) {
-          var key = props[propsIndex];
-          var value = object[key];
-
-          if (value === undefined$1 ||
-              (eq(value, objectProto[key]) && !hasOwnProperty.call(object, key))) {
-            object[key] = source[key];
-          }
-        }
-      }
-
-      return object;
+    var defaults = baseRest(function(args) {
+      args.push(undefined$1, customDefaultsAssignIn);
+      return apply(assignInWith, undefined$1, args);
     });
 
     /**
@@ -13469,11 +13452,6 @@ var lodash = createCommonjsModule(function (module, exports) {
      * // => { '1': 'c', '2': 'b' }
      */
     var invert = createInverter(function(result, value, key) {
-      if (value != null &&
-          typeof value.toString != 'function') {
-        value = nativeObjectToString.call(value);
-      }
-
       result[value] = key;
     }, constant(identity));
 
@@ -13504,11 +13482,6 @@ var lodash = createCommonjsModule(function (module, exports) {
      * // => { 'group1': ['a', 'c'], 'group2': ['b'] }
      */
     var invertBy = createInverter(function(result, value, key) {
-      if (value != null &&
-          typeof value.toString != 'function') {
-        value = nativeObjectToString.call(value);
-      }
-
       if (hasOwnProperty.call(result, value)) {
         result[value].push(key);
       } else {
@@ -15059,12 +15032,9 @@ var lodash = createCommonjsModule(function (module, exports) {
       , 'g');
 
       // Use a sourceURL for easier debugging.
-      // The sourceURL gets injected into the source that's eval-ed, so be careful
-      // with lookup (in case of e.g. prototype pollution), and strip newlines if any.
-      // A newline wouldn't be a valid sourceURL anyway, and it'd enable code injection.
       var sourceURL = '//# sourceURL=' +
-        (hasOwnProperty.call(options, 'sourceURL')
-          ? (options.sourceURL + '').replace(/[\r\n]/g, ' ')
+        ('sourceURL' in options
+          ? options.sourceURL
           : ('lodash.templateSources[' + (++templateCounter) + ']')
         ) + '\n';
 
@@ -15097,9 +15067,7 @@ var lodash = createCommonjsModule(function (module, exports) {
 
       // If `variable` is not specified wrap a with-statement around the generated
       // code to add the data object to the top of the scope chain.
-      // Like with sourceURL, we take care to not check the option's prototype,
-      // as this configuration is a code injection vector.
-      var variable = hasOwnProperty.call(options, 'variable') && options.variable;
+      var variable = options.variable;
       if (!variable) {
         source = 'with (obj) {\n' + source + '\n}\n';
       }
@@ -17304,11 +17272,10 @@ var lodash = createCommonjsModule(function (module, exports) {
     baseForOwn(LazyWrapper.prototype, function(func, methodName) {
       var lodashFunc = lodash[methodName];
       if (lodashFunc) {
-        var key = lodashFunc.name + '';
-        if (!hasOwnProperty.call(realNames, key)) {
-          realNames[key] = [];
-        }
-        realNames[key].push({ 'name': methodName, 'func': lodashFunc });
+        var key = (lodashFunc.name + ''),
+            names = realNames[key] || (realNames[key] = []);
+
+        names.push({ 'name': methodName, 'func': lodashFunc });
       }
     });
 
@@ -19319,8 +19286,6 @@ var Group = function () {
     get: function get() {
       return (this.children.length === 0 ? [this] : this.children).map(function (g) {
         return g.value;
-      }).filter(function (v) {
-        return v !== undefined;
       });
     }
   }]);
@@ -19472,15 +19437,6 @@ function _classCallCheck$5(instance, Constructor) { if (!(instance instanceof Co
 
 var UndefinedParameterTypeError$1 = errors.UndefinedParameterTypeError;
 
-// Does not include (){} characters because they have special meaning
-
-
-var ESCAPE_REGEXP = /([\\^[$.|?*+])/g;
-var PARAMETER_REGEXP = /(\\\\)?{([^}]+)}/g;
-var OPTIONAL_REGEXP = /(\\\\)?\(([^)]+)\)/g;
-var ALTERNATIVE_NON_WHITESPACE_TEXT_REGEXP = /([^\s^/]+)((\/[^\s^/]+)+)/g;
-var DOUBLE_ESCAPE = '\\\\';
-
 var CucumberExpression = function () {
   /**
    * @param expression
@@ -19489,56 +19445,48 @@ var CucumberExpression = function () {
   function CucumberExpression(expression, parameterTypeRegistry) {
     _classCallCheck$5(this, CucumberExpression);
 
+    // Does not include (){} characters because they have special meaning
+    var ESCAPE_REGEXP = /([\\^[$.|?*+])/g;
+    var PARAMETER_REGEXP = /{([^}]+)}/g;
+    var OPTIONAL_REGEXP = /\(([^)]+)\)/g;
+    var ALTERNATIVE_NON_WHITESPACE_TEXT_REGEXP = /([^\s^/]+)((\/[^\s^/]+)+)/g;
+
     this._expression = expression;
     this._parameterTypes = [];
+    var regexp = '^';
+    var match = void 0;
+    var matchOffset = 0;
 
-    expression = this.processEscapes(expression);
-    expression = this.processOptional(expression);
-    expression = this.processAlternation(expression);
-    expression = this.processParameters(expression, parameterTypeRegistry);
-    expression = '^' + expression + '$';
+    // Does not include (){} because they have special meaning
 
-    this._treeRegexp = new tree_regexp(expression);
+    expression = expression.replace(ESCAPE_REGEXP, '\\$1');
+
+    // Create non-capturing, optional capture groups from parenthesis
+    expression = expression.replace(OPTIONAL_REGEXP, '(?:$1)?');
+
+    expression = expression.replace(ALTERNATIVE_NON_WHITESPACE_TEXT_REGEXP, function (_, p1, p2) {
+      return '(?:' + p1 + p2.replace(/\//g, '|') + ')';
+    });
+
+    while ((match = PARAMETER_REGEXP.exec(expression)) !== null) {
+      var typeName = match[1];
+
+      var parameterType = parameterTypeRegistry.lookupByTypeName(typeName);
+      if (!parameterType) throw new UndefinedParameterTypeError$1(typeName);
+      this._parameterTypes.push(parameterType);
+
+      var text = expression.slice(matchOffset, match.index);
+      var captureRegexp = buildCaptureRegexp(parameterType.regexps);
+      matchOffset = PARAMETER_REGEXP.lastIndex;
+      regexp += text;
+      regexp += captureRegexp;
+    }
+    regexp += expression.slice(matchOffset);
+    regexp += '$';
+    this._treeRegexp = new tree_regexp(regexp);
   }
 
   _createClass$5(CucumberExpression, [{
-    key: 'processEscapes',
-    value: function processEscapes(expression) {
-      return expression.replace(ESCAPE_REGEXP, '\\$1');
-    }
-  }, {
-    key: 'processOptional',
-    value: function processOptional(expression) {
-      return expression.replace(OPTIONAL_REGEXP, function (match, p1, p2) {
-        return p1 === DOUBLE_ESCAPE ? '\\(' + p2 + '\\)' : '(?:' + p2 + ')?';
-      });
-    }
-  }, {
-    key: 'processAlternation',
-    value: function processAlternation(expression) {
-      return expression.replace(ALTERNATIVE_NON_WHITESPACE_TEXT_REGEXP, function (match) {
-        // replace \/ with /
-        // replace / with |
-        var replacement = match.replace(/\//g, '|').replace(/\\\|/g, '/');
-        return '(?:' + replacement + ')';
-      });
-    }
-  }, {
-    key: 'processParameters',
-    value: function processParameters(expression, parameterTypeRegistry) {
-      var _this = this;
-
-      return expression.replace(PARAMETER_REGEXP, function (match, p1, p2) {
-        if (p1 === DOUBLE_ESCAPE) return '\\{' + p2 + '\\}';
-
-        var typeName = p2;
-        var parameterType = parameterTypeRegistry.lookupByTypeName(typeName);
-        if (!parameterType) throw new UndefinedParameterTypeError$1(typeName);
-        _this._parameterTypes.push(parameterType);
-        return buildCaptureRegexp(parameterType.regexps);
-      });
-    }
-  }, {
     key: 'match',
     value: function match(text) {
       return argument.build(this._treeRegexp, text, this._parameterTypes);
@@ -19617,7 +19565,19 @@ var ParameterType = function () {
   _createClass$6(ParameterType, [{
     key: 'transform',
     value: function transform(thisObj, groupValues) {
-      return this._transform.apply(thisObj, groupValues);
+      var args = void 0;
+      if (this._transform.length === 1) {
+        // transform function with arity 1.
+        var nonNullGroupValues = groupValues.filter(function (v) {
+          return v !== null && v !== undefined;
+        });
+        if (nonNullGroupValues.length >= 2) throw new CucumberExpressionError$2('Single transformer unexpectedly matched 2 values - "' + nonNullGroupValues[0] + '" and "' + nonNullGroupValues[1] + '"');
+        args = [nonNullGroupValues[0]];
+      } else {
+        args = groupValues;
+      }
+
+      return this._transform.apply(thisObj, args);
     }
   }, {
     key: 'name',
@@ -20002,7 +19962,7 @@ var CucumberExpressionGenerator = function () {
 
             parameterTypeCombinations.push(parameterTypes);
 
-            expressionTemplate += escape(text.slice(pos, bestParameterTypeMatcher.start));
+            expressionTemplate += escapeForUtilFormat(text.slice(pos, bestParameterTypeMatcher.start));
             expressionTemplate += '{%s}';
 
             pos = bestParameterTypeMatcher.start + bestParameterTypeMatcher.group.length;
@@ -20016,7 +19976,7 @@ var CucumberExpressionGenerator = function () {
         }
       }
 
-      expressionTemplate += escape(text.slice(pos));
+      expressionTemplate += escapeForUtilFormat(text.slice(pos));
       return new combinatorial_generated_expression_factory(expressionTemplate, parameterTypeCombinations).generateExpressions();
     }
 
@@ -20103,9 +20063,8 @@ var CucumberExpressionGenerator = function () {
   return CucumberExpressionGenerator;
 }();
 
-function escape(s) {
-  return s.replace(/%/g, '%%') // for util.format
-  .replace(/\(/g, '\\(').replace(/{/g, '\\{').replace(/\//g, '\\/');
+function escapeForUtilFormat(s) {
+  return s.replace(/%/g, '%%');
 }
 
 var cucumber_expression_generator = CucumberExpressionGenerator;
@@ -21014,51 +20973,6 @@ var am = {
 		"* ",
 		"Եթե ",
 		"Երբ "
-	]
-};
-var an = {
-	and: [
-		"* ",
-		"Y ",
-		"E "
-	],
-	background: [
-		"Antecedents"
-	],
-	but: [
-		"* ",
-		"Pero "
-	],
-	examples: [
-		"Eixemplos"
-	],
-	feature: [
-		"Caracteristica"
-	],
-	given: [
-		"* ",
-		"Dau ",
-		"Dada ",
-		"Daus ",
-		"Dadas "
-	],
-	name: "Aragonese",
-	native: "Aragonés",
-	scenario: [
-		"Caso"
-	],
-	scenarioOutline: [
-		"Esquema del caso"
-	],
-	then: [
-		"* ",
-		"Alavez ",
-		"Allora ",
-		"Antonces "
-	],
-	when: [
-		"* ",
-		"Cuan "
 	]
 };
 var ar = {
@@ -23019,8 +22933,7 @@ var ru = {
 	but: [
 		"* ",
 		"Но ",
-		"А ",
-		"Иначе "
+		"А "
 	],
 	examples: [
 		"Примеры"
@@ -23035,7 +22948,8 @@ var ru = {
 		"* ",
 		"Допустим ",
 		"Дано ",
-		"Пусть "
+		"Пусть ",
+		"Если "
 	],
 	name: "Russian",
 	native: "русский",
@@ -23053,8 +22967,7 @@ var ru = {
 	],
 	when: [
 		"* ",
-		"Когда ",
-		"Если "
+		"Когда "
 	]
 };
 var sk = {
@@ -23637,7 +23550,6 @@ var vi = {
 var gherkinLanguages = {
 	af: af,
 	am: am,
-	an: an,
 	ar: ar,
 	ast: ast,
 	az: az,
@@ -24240,7 +24152,6 @@ var gherkinLanguages$1 = /*#__PURE__*/Object.freeze({
 	__proto__: null,
 	af: af,
 	am: am,
-	an: an,
 	ar: ar,
 	ast: ast,
 	az: az,
@@ -24503,6 +24414,9 @@ var parser = function Parser(builder) {
   this.parse = function(tokenScanner, tokenMatcher) {
     if(typeof tokenScanner == 'string') {
       tokenScanner = new token_scanner(tokenScanner);
+    }
+    if(typeof tokenMatcher == 'string') {
+      tokenMatcher = new token_matcher(tokenMatcher);
     }
     tokenMatcher = tokenMatcher || new token_matcher();
     builder.reset();
@@ -26975,11 +26889,8 @@ function Compiler() {
     } else if (argument.type === 'DocString') {
       var docString = {
         location: pickleLocation(argument.location),
-        content: interpolate(argument.content, variableCells, valueCells),
+        content: interpolate(argument.content, variableCells, valueCells)
       };
-      if(argument.contentType) {
-        docString.contentType = interpolate(argument.contentType, variableCells, valueCells);
-      }
       result.push(docString);
     } else {
       throw Error('Internal error');
@@ -26991,10 +26902,7 @@ function Compiler() {
     variableCells.forEach(function (variableCell, n) {
       var valueCell = valueCells[n];
       var search = new RegExp('<' + variableCell.value + '>', 'g');
-      // JS Specific - dollar sign needs to be escaped with another dollar sign
-      // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/replace#Specifying_a_string_as_a_parameter
-      var replacement = valueCell.value.replace(new RegExp('\\$', 'g'), '$$$$');
-      name = name.replace(search, replacement);
+      name = name.replace(search, valueCell.value);
     });
     return name;
   }
@@ -27197,7 +27105,7 @@ var keyword_type_1 = keyword_type.getStepKeywordType;
 var diff = createCommonjsModule(function (module, exports) {
 /*!
 
- diff v3.5.0
+ diff v3.4.0
 
 Software License Agreement (BSD License)
 
@@ -27844,16 +27752,16 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	jsonDiff.tokenize = /*istanbul ignore start*/_line.lineDiff /*istanbul ignore end*/.tokenize;
 	jsonDiff.castInput = function (value) {
-	  /*istanbul ignore start*/var _options = /*istanbul ignore end*/this.options,
-	      undefinedReplacement = _options.undefinedReplacement,
-	      _options$stringifyRep = _options.stringifyReplacer,
-	      stringifyReplacer = _options$stringifyRep === undefined ? function (k, v) /*istanbul ignore start*/{
-	    return (/*istanbul ignore end*/typeof v === 'undefined' ? undefinedReplacement : v
-	    );
-	  } : _options$stringifyRep;
+	  /*istanbul ignore start*/var /*istanbul ignore end*/undefinedReplacement = this.options.undefinedReplacement;
 
 
-	  return typeof value === 'string' ? value : JSON.stringify(canonicalize(value, null, null, stringifyReplacer), stringifyReplacer, '  ');
+	  return typeof value === 'string' ? value : JSON.stringify(canonicalize(value), function (k, v) {
+	    if (typeof v === 'undefined') {
+	      return undefinedReplacement;
+	    }
+
+	    return v;
+	  }, '  ');
 	};
 	jsonDiff.equals = function (left, right) {
 	  return (/*istanbul ignore start*/_base2['default'] /*istanbul ignore end*/.prototype.equals.call(jsonDiff, left.replace(/,([\r\n])/g, '$1'), right.replace(/,([\r\n])/g, '$1'))
@@ -27865,14 +27773,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 	// This function handles the presence of circular references by bailing out when encountering an
-	// object that is already on the "stack" of items being processed. Accepts an optional replacer
-	function canonicalize(obj, stack, replacementStack, replacer, key) {
+	// object that is already on the "stack" of items being processed.
+	function canonicalize(obj, stack, replacementStack) {
 	  stack = stack || [];
 	  replacementStack = replacementStack || [];
-
-	  if (replacer) {
-	    obj = replacer(key, obj);
-	  }
 
 	  var i = /*istanbul ignore start*/void 0 /*istanbul ignore end*/;
 
@@ -27889,7 +27793,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    canonicalizedObj = new Array(obj.length);
 	    replacementStack.push(canonicalizedObj);
 	    for (i = 0; i < obj.length; i += 1) {
-	      canonicalizedObj[i] = canonicalize(obj[i], stack, replacementStack, replacer, key);
+	      canonicalizedObj[i] = canonicalize(obj[i], stack, replacementStack);
 	    }
 	    stack.pop();
 	    replacementStack.pop();
@@ -27905,17 +27809,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	    canonicalizedObj = {};
 	    replacementStack.push(canonicalizedObj);
 	    var sortedKeys = [],
-	        _key = /*istanbul ignore start*/void 0 /*istanbul ignore end*/;
-	    for (_key in obj) {
+	        key = /*istanbul ignore start*/void 0 /*istanbul ignore end*/;
+	    for (key in obj) {
 	      /* istanbul ignore else */
-	      if (obj.hasOwnProperty(_key)) {
-	        sortedKeys.push(_key);
+	      if (obj.hasOwnProperty(key)) {
+	        sortedKeys.push(key);
 	      }
 	    }
 	    sortedKeys.sort();
 	    for (i = 0; i < sortedKeys.length; i += 1) {
-	      _key = sortedKeys[i];
-	      canonicalizedObj[_key] = canonicalize(obj[_key], stack, replacementStack, replacer, _key);
+	      key = sortedKeys[i];
+	      canonicalizedObj[key] = canonicalize(obj[key], stack, replacementStack);
 	    }
 	    stack.pop();
 	    replacementStack.pop();
@@ -27942,10 +27846,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
 	/*istanbul ignore end*/var arrayDiff = /*istanbul ignore start*/exports. /*istanbul ignore end*/arrayDiff = new /*istanbul ignore start*/_base2['default'] /*istanbul ignore end*/();
-	arrayDiff.tokenize = function (value) {
+	arrayDiff.tokenize = arrayDiff.join = function (value) {
 	  return value.slice();
 	};
-	arrayDiff.join = arrayDiff.removeEmpty = function (value) {
+	arrayDiff.removeEmpty = function (value) {
 	  return value;
 	};
 
@@ -28007,8 +27911,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  function hunkFits(hunk, toPos) {
 	    for (var j = 0; j < hunk.lines.length; j++) {
 	      var line = hunk.lines[j],
-	          operation = line.length > 0 ? line[0] : ' ',
-	          content = line.length > 0 ? line.substr(1) : line;
+	          operation = line[0],
+	          content = line.substr(1);
 
 	      if (operation === ' ' || operation === '-') {
 	        // Context sanity check
@@ -28065,8 +27969,8 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    for (var j = 0; j < _hunk.lines.length; j++) {
 	      var line = _hunk.lines[j],
-	          operation = line.length > 0 ? line[0] : ' ',
-	          content = line.length > 0 ? line.substr(1) : line,
+	          operation = line[0],
+	          content = line.substr(1),
 	          delimiter = _hunk.linedelimiters[j];
 
 	      if (operation === ' ') {
@@ -28202,16 +28106,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	  // Parses the --- and +++ headers, if none are found, no lines
 	  // are consumed.
 	  function parseFileHeader(index) {
-	    var fileHeader = /^(---|\+\+\+)\s+(.*)$/.exec(diffstr[i]);
+	    var headerPattern = /^(---|\+\+\+)\s+([\S ]*)(?:\t(.*?)\s*)?$/;
+	    var fileHeader = headerPattern.exec(diffstr[i]);
 	    if (fileHeader) {
 	      var keyPrefix = fileHeader[1] === '---' ? 'old' : 'new';
-	      var data = fileHeader[2].split('\t', 2);
-	      var fileName = data[0].replace(/\\\\/g, '\\');
+	      var fileName = fileHeader[2].replace(/\\\\/g, '\\');
 	      if (/^".*"$/.test(fileName)) {
 	        fileName = fileName.substr(1, fileName.length - 2);
 	      }
 	      index[keyPrefix + 'FileName'] = fileName;
-	      index[keyPrefix + 'Header'] = (data[1] || '').trim();
+	      index[keyPrefix + 'Header'] = fileHeader[3];
 
 	      i++;
 	    }
@@ -28241,7 +28145,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      if (diffstr[i].indexOf('--- ') === 0 && i + 2 < diffstr.length && diffstr[i + 1].indexOf('+++ ') === 0 && diffstr[i + 2].indexOf('@@') === 0) {
 	        break;
 	      }
-	      var operation = diffstr[i].length == 0 && i != diffstr.length - 1 ? ' ' : diffstr[i][0];
+	      var operation = diffstr[i][0];
 
 	      if (operation === '+' || operation === '-' || operation === ' ' || operation === '\\') {
 	        hunk.lines.push(diffstr[i]);
@@ -29488,6 +29392,11 @@ var _library = true;
 
 var _redefine = _hide;
 
+var hasOwnProperty = {}.hasOwnProperty;
+var _has = function (it, key) {
+  return hasOwnProperty.call(it, key);
+};
+
 var _iterators = {};
 
 var toString = {}.toString;
@@ -29548,18 +29457,11 @@ var _arrayIncludes = function (IS_INCLUDES) {
   };
 };
 
-var _shared = createCommonjsModule(function (module) {
 var SHARED = '__core-js_shared__';
 var store = _global[SHARED] || (_global[SHARED] = {});
-
-(module.exports = function (key, value) {
-  return store[key] || (store[key] = value !== undefined ? value : {});
-})('versions', []).push({
-  version: _core.version,
-  mode:  'pure' ,
-  copyright: '© 2018 Denis Pushkarev (zloirock.ru)'
-});
-});
+var _shared = function (key) {
+  return store[key] || (store[key] = {});
+};
 
 var id$1 = 0;
 var px = Math.random();
@@ -31395,8 +31297,8 @@ var isImplemented$1 = function () {
 		Object.keys("primitive");
 		return true;
 	} catch (e) {
-		return false;
-	}
+ return false;
+}
 };
 
 // eslint-disable-next-line no-empty-function
@@ -31410,9 +31312,13 @@ var isValue = function (val) {
 
 var keys = Object.keys;
 
-var shim = function (object) { return keys(isValue(object) ? Object(object) : object); };
+var shim = function (object) {
+	return keys(isValue(object) ? Object(object) : object);
+};
 
-var keys$1 = isImplemented$1() ? Object.keys : shim;
+var keys$1 = isImplemented$1()
+	? Object.keys
+	: shim;
 
 var validValue = function (value) {
 	if (!isValue(value)) throw new TypeError("Cannot use null or undefined");
@@ -31628,14 +31534,11 @@ var pad_1 = function (length/*, precision*/) {
 var objToString = Object.prototype.toString, id$2 = objToString.call(new Date());
 
 var isDate = function (value) {
-	return (
-		(value && !isNaN(value) && (value instanceof Date || objToString.call(value) === id$2)) ||
-		false
-	);
+	return (value && (value instanceof Date || objToString.call(value) === id$2)) || false;
 };
 
 var validDate = function (value) {
-	if (!isDate(value)) throw new TypeError(value + " is not valid Date object");
+	if (!isDate(value) || isNaN(value)) throw new TypeError(value + " is not valid Date object");
 	return value;
 };
 
@@ -32373,10 +32276,9 @@ var errorStackParser = createCommonjsModule(function (module, exports) {
                         functionName: line
                     });
                 } else {
-                    var functionNameRegex = /((.*".+"[^@]*)?[^@]*)(?:@)/;
-                    var matches = line.match(functionNameRegex);
-                    var functionName = matches && matches[1] ? matches[1] : undefined;
-                    var locationParts = this.extractLocation(line.replace(functionNameRegex, ''));
+                    var tokens = line.split('@');
+                    var locationParts = this.extractLocation(tokens.pop());
+                    var functionName = tokens.join('@') || undefined;
 
                     return new StackFrame({
                         functionName: functionName,
@@ -32494,7 +32396,7 @@ var stackGenerator = createCommonjsModule(function (module, exports) {
             }
 
             var curr = arguments.callee;
-            while (curr && stack.length < maxStackSize && curr['arguments']) {
+            while (curr && stack.length < maxStackSize) {
                 // Allow V8 optimizations
                 var args = new Array(curr['arguments'].length);
                 for (var i = 0; i < args.length; ++i) {
@@ -35580,7 +35482,6 @@ var META = _meta.KEY;
 
 
 
-
 var gOPD$1 = _objectGopd.f;
 var dP$1 = _objectDp.f;
 var gOPN$1 = _objectGopnExt.f;
@@ -35765,14 +35666,15 @@ $JSON && _export(_export.S + _export.F * (!USE_NATIVE || _fails(function () {
   return _stringify([S]) != '[null]' || _stringify({ a: S }) != '{}' || _stringify(Object(S)) != '{}';
 })), 'JSON', {
   stringify: function stringify(it) {
+    if (it === undefined || isSymbol(it)) return; // IE8 returns string on undefined
     var args = [it];
     var i = 1;
     var replacer, $replacer;
     while (arguments.length > i) args.push(arguments[i++]);
-    $replacer = replacer = args[1];
-    if (!_isObject(replacer) && it === undefined || isSymbol(it)) return; // IE8 returns string on undefined
-    if (!_isArray(replacer)) replacer = function (key, value) {
-      if (typeof $replacer == 'function') value = $replacer.call(this, key, value);
+    replacer = args[1];
+    if (typeof replacer == 'function') $replacer = replacer;
+    if ($replacer || !_isArray(replacer)) replacer = function (key, value) {
+      if ($replacer) value = $replacer.call(this, key, value);
       if (!isSymbol(value)) return value;
     };
     args[1] = replacer;
@@ -37582,7 +37484,8 @@ unwrapExports(json_formatter);
 
 const { EventEmitter: EventEmitter$1 } = events;
 const JsonFormatter = json_formatter.default;
-const EventDataCollector = event_data_collector.default;
+const EventDataCollector = event_data_collector
+  .default;
 
 function last(collection) {
   return collection[collection.length - 1];
@@ -37605,9 +37508,7 @@ function generateCucumberJson(state) {
   // eslint-disable-next-line no-new
   new JsonFormatter({
     eventBroadcaster,
-    eventDataCollector: new EventDataCollector(
-      eventBroadcaster
-    ),
+    eventDataCollector: new EventDataCollector(eventBroadcaster),
     log: logFn
   });
 
@@ -37694,7 +37595,9 @@ var eventHelpers = { findFeature, findPickles };
 
 const PickleFilter = pickle_filter.default;
 const statuses$1 = status.default;
-const { SupportCodeLibraryBuilder } = support_code_library_builder;
+const {
+  SupportCodeLibraryBuilder
+} = support_code_library_builder;
 const { CucumberDataCollector: CucumberDataCollector$1 } = cucumberDataCollector;
 const { generateCucumberJson: generateCucumberJson$1 } = generateCucumberJson_1;
 

@@ -19,10 +19,14 @@ function combine(...streams) {
 
 class World {
   async run(extraArgs = []) {
-    const child = childProcess.spawn("npx", ["cypress", "run", ...extraArgs], {
-      stdio: ["ignore", "pipe", "pipe"],
-      cwd: this.tmpDir
-    });
+    const child = childProcess.spawn(
+      "npx",
+      ["cypress", "run", "--browser", "chromium", ...extraArgs],
+      {
+        stdio: ["ignore", "pipe", "pipe"],
+        cwd: this.tmpDir
+      }
+    );
 
     const combined = combine(child.stdout, child.stderr);
 
