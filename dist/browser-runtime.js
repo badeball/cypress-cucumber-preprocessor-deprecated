@@ -37593,6 +37593,38 @@ function findPickles(events) {
 
 var eventHelpers = { findFeature, findPickles };
 
+function memoize(fn) {
+  let isRun = false, result;
+
+  return function (...args) {
+    if (!isRun) {
+      result = fn(...args);
+      isRun = true;
+    }
+
+    return result;
+  }
+}
+
+const constructLocationMap = memoize(function (feature) {
+  return feature.children.reduce((map, child) => {
+    const { line, column } = child.location;
+    map[`${line}-${column}`] = child;
+    return map;
+  }, {})
+});
+
+function findScenarioByLocation(feature, { line, column }) {
+  return constructLocationMap(feature)[`${line}-${column}`];
+}
+
+function findScenarioByPickle(feature, pickle) {
+  const location = pickle.locations[pickle.locations.length - 1];
+  return findScenarioByLocation(feature, location);
+}
+
+var astHelpers = { findScenarioByPickle };
+
 const PickleFilter = pickle_filter.default;
 const statuses$1 = status.default;
 const {
@@ -37602,6 +37634,7 @@ const { CucumberDataCollector: CucumberDataCollector$1 } = cucumberDataCollector
 const { generateCucumberJson: generateCucumberJson$1 } = generateCucumberJson_1;
 
 const { findFeature: findFeature$1, findPickles: findPickles$1 } = eventHelpers;
+const { findScenarioByPickle: findScenarioByPickle$1 } = astHelpers;
 
 const cleanupFilename = s => s.split(".")[0];
 
@@ -37651,6 +37684,7 @@ function createTestsFromFeatures(options) {
     const testState = new CucumberDataCollector$1(filePath, events);
     const feature = findFeature$1(events);
     const pickles = findPickles$1(events);
+    const scenarioOutlineCount = {};
 
     if (localFilesToRequireFn) {
       const supportCodeLibraryBuilder = new SupportCodeLibraryBuilder();
@@ -37690,7 +37724,20 @@ function createTestsFromFeatures(options) {
           Object.assign({}, step, { index })
         );
 
-        it(pickle.name, function() {
+        const scenario = findScenarioByPickle$1(feature, pickle);
+
+        let renderedScenarioName;
+
+        if (scenario.type === "Scenario") {
+          renderedScenarioName = pickle.name;
+        } else {
+          const { line, column } = scenario.location;
+          const key = `${line}-${column}`;
+          scenarioOutlineCount[key] = scenarioOutlineCount[key] || 1;
+          renderedScenarioName = `${pickle.name} (example #${scenarioOutlineCount[key]++})`;
+        }
+
+        it(renderedScenarioName, function() {
           return cy
             .then(() => testState.onStartScenario(pickle, indexedSteps))
             .then(() => {
