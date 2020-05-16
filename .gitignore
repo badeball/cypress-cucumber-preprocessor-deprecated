@@ -72,3 +72,6 @@ cypress-cucumber-webpack-typescript-example/
 
 # Temporary directory for test execution
 tmp/
+
+# Output from the visualizer plugin for Rollup
+stats.html
