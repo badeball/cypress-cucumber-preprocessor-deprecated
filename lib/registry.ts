@@ -10,9 +10,17 @@ import DataTable from "@cucumber/cucumber/lib/models/data_table";
 
 import parse from "@cucumber/tag-expressions";
 
+import * as stackTraceParser from "stacktrace-parser";
+
+import isPathInside from "is-path-inside";
+
+import path from "path";
+
 import { IParameterTypeDefinition } from "./types";
 
 interface IStepDefinition {
+  file: string;
+  line: number;
   expression: Expression;
   implementation: (...args: any[]) => void;
 }
@@ -46,6 +54,36 @@ function parseHookArguments(
   } else {
     throw new Error("Unexpected argument for Before hook");
   }
+}
+
+function isFileNameInpreprocessor(filepath: string) {
+  return filepath.includes("@badeball/cypress-cucumber-preprocessor");
+}
+
+function getDefinitionLineAndFile() {
+  const unparsedStack = new Error().stack;
+
+  if (unparsedStack) {
+    const stackframes = stackTraceParser.parse(unparsedStack);
+    const stackframe = stackframes.find((frame) => {
+      return frame.file && !isFileNameInpreprocessor(frame.file);
+    });
+
+    if (stackframe) {
+      const line = stackframe.lineNumber || 0;
+      const file = stackframe.file || "unkown";
+
+      return {
+        line,
+        file,
+      };
+    }
+  }
+
+  return {
+    line: 0,
+    file: "unknown",
+  };
 }
 
 export class Registry {
@@ -111,8 +149,12 @@ export class Registry {
   }
 
   private defineStep(description: string | RegExp, implementation: () => void) {
+    const { line, file } = getDefinitionLineAndFile();
+
     if (typeof description === "string") {
       this.stepDefinitions.push({
+        line,
+        file,
         expression: new CucumberExpression(
           description,
           this.parameterTypeRegistry
@@ -121,6 +163,8 @@ export class Registry {
       });
     } else if (description instanceof RegExp) {
       this.stepDefinitions.push({
+        line,
+        file,
         expression: new RegularExpression(
           description,
           this.parameterTypeRegistry
@@ -186,9 +230,9 @@ export class Registry {
             .map((stepDefinition) => {
               const { expression } = stepDefinition;
               if (expression instanceof RegularExpression) {
-                return ` ${expression.regexp}`;
+                return ` ${expression.regexp} - ${stepDefinition.file}:${stepDefinition.line}`;
               } else if (expression instanceof CucumberExpression) {
-                return ` ${expression.source}`;
+                return ` ${expression.source} - ${stepDefinition.file}:${stepDefinition.line}`;
               }
             })
             .join("\n")

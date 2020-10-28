@@ -30,7 +30,8 @@
     "cosmiconfig": "^4.0.0",
     "debug": "^4.2.0",
     "glob": "^7.1.6",
-    "is-path-inside": "^3.0.2"
+    "is-path-inside": "^3.0.2",
+    "stacktrace-parser": "^0.1.10"
   },
   "devDependencies": {
     "@types/debug": "^4.1.5",
