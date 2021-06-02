@@ -38,7 +38,7 @@
     "build": "tsc",
     "watch": "tsc --watch",
     "fmt": "prettier --ignore-path .gitignore --write '**/*.ts'",
-    "test": "npm run test:fmt && npm run test:types && npm run test:unit && npm run test:integration",
+    "test": "npm run test:fmt && npm run test:unit && npm run test:integration",
     "test:fmt": "prettier --ignore-path .gitignore --check '**/*.ts'",
     "test:types": "dtslint --expectOnly types",
     "test:unit": "mocha",
