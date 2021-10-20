@@ -1,7 +1,6 @@
 import { Given } from "@cucumber/cucumber";
 import path from "path";
 import { promises as fs } from "fs";
-import { name as packageName } from "../../package.json";
 
 async function addOrUpdateConfiguration(
   absoluteConfigPath: string,
@@ -35,7 +34,10 @@ async function addOrUpdateConfiguration(
 }
 
 Given("additional preprocessor configuration", async function (jsonContent) {
-  const absoluteConfigPath = path.join(this.tmpDir, `.${packageName}rc`);
+  const absoluteConfigPath = path.join(
+    this.tmpDir,
+    ".cypress-cucumber-preprocessorrc"
+  );
 
   await addOrUpdateConfiguration(absoluteConfigPath, jsonContent);
 });
