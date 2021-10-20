@@ -101,10 +101,9 @@ export function getStepDefinitionPatterns(
 
   debug(`replacing [filepart] with ${util.inspect(parts)}`);
 
-  return (
-    typeof configuration.preprocessor.stepDefinitions === "string"
-      ? [configuration.preprocessor.stepDefinitions]
-      : configuration.preprocessor.stepDefinitions
+  return (typeof configuration.preprocessor.stepDefinitions === "string"
+    ? [configuration.preprocessor.stepDefinitions]
+    : configuration.preprocessor.stepDefinitions
   )
     .flatMap((pattern) => {
       if (pattern.includes("[filepath]") && pattern.includes("[filepart]")) {
@@ -120,6 +119,11 @@ export function getStepDefinitionPatterns(
           ...parts.map((part) => pattern.replace("[filepart]", part)),
           path.normalize(pattern.replace("[filepart]", ".")),
         ];
+      } else if (pattern.includes("[filename]")) {
+        return pattern.replace(
+          "[filename]",
+          path.basename(filepathReplacement)
+        );
       } else {
         return pattern;
       }
