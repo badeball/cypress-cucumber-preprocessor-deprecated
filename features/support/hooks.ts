@@ -18,7 +18,7 @@ Before(async function ({ gherkinDocument, pickle }) {
 
   this.tmpDir = path.join(projectPath, "tmp", `${relativeUri}_${line}`);
 
-  await fs.rmdir(this.tmpDir, { recursive: true });
+  await fs.rm(this.tmpDir, { recursive: true, force: true });
 
   await writeFile(
     path.join(this.tmpDir, "cypress.json"),
