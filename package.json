@@ -56,7 +56,7 @@
   },
   "devDependencies": {
     "@bahmutov/cypress-esbuild-preprocessor": "^2.1.2",
-    "@cucumber/cucumber": "^7.3.2",
+    "@cucumber/cucumber": "^8.0.0-rc.3",
     "@cucumber/pretty-formatter": "^1.0.0-alpha.0",
     "@cypress/browserify-preprocessor": "^3.0.2",
     "@cypress/webpack-preprocessor": "^5.11.1",

@@ -37,7 +37,7 @@ jobs:
           rm -rf !(examples)
       - name: Install NPM modules
         working-directory: examples/browserify
-        run: npm install
+        run: npm install --legacy-peer-deps
       - name: Run Cypress
         working-directory: examples/browserify
         run: npx cypress run
@@ -67,7 +67,7 @@ jobs:
           rm -rf !(examples)
       - name: Install NPM modules
         working-directory: examples/webpack
-        run: npm install
+        run: npm install --legacy-peer-deps
       - name: Run Cypress
         working-directory: examples/webpack
         run: npx cypress run
@@ -97,7 +97,7 @@ jobs:
           rm -rf !(examples)
       - name: Install NPM modules
         working-directory: examples/esbuild
-        run: npm install
+        run: npm install --legacy-peer-deps
       - name: Run Cypress
         working-directory: examples/esbuild
         run: npx cypress run

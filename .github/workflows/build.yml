@@ -48,8 +48,8 @@ jobs:
           CYPRESS_INSTALL_BINARY: "0"
           CUCUMBER_JSON_FORMATTER_URL: https://github.com/cucumber/common/releases/download/json-formatter%2Fgo%2Fv19.0.0/cucumber-json-formatter-linux-amd64
         run: |
-          npm install --force && \
-          npm install --no-save cypress@${{ matrix.cypress-version }} && \
+          npm install --legacy-peer-deps && \
+          npm install --legacy-peer-deps --no-save cypress@${{ matrix.cypress-version }} && \
           env -u CYPRESS_INSTALL_BINARY npx cypress install && \
           curl -L $CUCUMBER_JSON_FORMATTER_URL > /usr/bin/cucumber-json-formatter && \
           chmod +x /usr/bin/cucumber-json-formatter
@@ -70,7 +70,7 @@ jobs:
         env:
           CUCUMBER_JSON_FORMATTER_URL: https://github.com/cucumber/common/releases/download/json-formatter%2Fgo%2Fv19.0.0/cucumber-json-formatter-windows-amd64
         run: |
-          npm install
+          npm install --legacy-peer-deps
           curl -L $CUCUMBER_JSON_FORMATTER_URL > cucumber-json-formatter.exe
           chmod +x ./cucumber-json-formatter.exe
           echo $GITHUB_WORKSPACE >> $GITHUB_PATH
